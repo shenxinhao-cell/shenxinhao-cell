@@ -1,1 +1,58 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <algorithm>
 
+double calculateSimilarity(const std::string& originalFile, const std::string& plagiarizedFile) {
+    std::ifstream originalReader(originalFile);
+    std::ifstream plagiarizedReader(plagiarizedFile);
+
+    if (!originalReader.is_open() || !plagiarizedReader.is_open()) {
+        std::cerr << "Failed to open files." << std::endl;
+        return 0.0;
+    }
+
+    std::string originalText((std::istreambuf_iterator<char>(originalReader)), std::istreambuf_iterator<char>());
+    std::string plagiarizedText((std::istreambuf_iterator<char>(plagiarizedReader)), std::istreambuf_iterator<char>());
+
+    // 去除标点符号和空格，只保留字母和数字
+    originalText.erase(std::remove_if(originalText.begin(), originalText.end(), [](char c) { return !isalnum(c); }), originalText.end());
+    plagiarizedText.erase(std::remove_if(plagiarizedText.begin(), plagiarizedText.end(), [](char c) { return !isalnum(c); }), plagiarizedText.end());
+
+    // 计算重复率
+    double similarity;
+    if (originalText.empty()) {
+        similarity = 0.0;
+    } else {
+        similarity = static_cast<double>(plagiarizedText.length()) / originalText.length() * 100;
+    }
+
+    originalReader.close();
+    plagiarizedReader.close();
+
+    return similarity;
+}
+
+int main(int argc, char* argv[]) {
+    if (argc != 4) {
+        std::cerr << "Usage: ./plagiarism_checker original_file plagiarized_file output_file" << std::endl;
+        return 1;
+    }
+
+    std::string originalFile = argv[1];
+    std::string plagiarizedFile = argv[2];
+    std::string outputFile = argv[3];
+
+    double similarity = calculateSimilarity(originalFile, plagiarizedFile);
+
+    std::ofstream writer(outputFile);
+    if (!writer.is_open()) {
+        std::cerr << "Failed to open output file." << std::endl;
+        return 1;
+    }
+
+    writer << "重复率: " << similarity << "%";
+    writer.close();
+
+    return 0;
+}
